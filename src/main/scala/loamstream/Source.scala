@@ -1,23 +1,34 @@
 package loamstream
 
-trait Source[A, B] {
-  def pile: Pile[A, B]
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+
+trait Source[A] {
+  def value(implicit executor: ExecutionContext): Future[A]
   
-  def >>>[C, D](f: (A, B) => (C, D)): Pipeline[Pile[C,D]] = {
-    
-    
-    ???
-  }
+  def map[B](f: A ~> B)(implicit executor: ExecutionContext): Pipeline[B] = Pipeline.from(this).map(f)
+  
+  def flatMap[B](f: A ~> Pipeline[B])(implicit executor: ExecutionContext): Pipeline[B] = Pipeline.from(this).flatMap(f)
 }
 
 object Source {
-  def fromFunction[A, B](f: () => Pile[A, B]): Source[A, B] = new LazySource(f)
+
+  def of[A](a: A): Source[A] = Literal(a)
   
-  def fromPile[A, B](pile: Pile[A, B]): Source[A, B] = ConcreteSource(pile)
-  
-  final class LazySource[A, B](f: () => Pile[A, B]) extends Source[A, B] {
-    override lazy val pile: Pile[A, B] = f()
+  def apply[A](f: () => Future[A]): Source[A] = new Source[A] {
+    override def value(implicit executor: ExecutionContext): Future[A] = f()
   }
-  
-  final case class ConcreteSource[A, B](pile: Pile[A, B]) extends Source[A, B]
+
+  final case class Literal[A](a: A) extends Source[A] {
+    override def value(implicit executor: ExecutionContext): Future[A] = Future.successful(a)
+  }
+
+  final case class Composite[A, B](as: Source[A], bs: Source[B]) extends Source[(A, B)] {
+    override def value(implicit executor: ExecutionContext): Future[(A, B)] = {
+      for {
+        a <- as.value
+        b <- bs.value
+      } yield (a, b)
+    }
+  }
 }

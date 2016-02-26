@@ -8,9 +8,7 @@ trait Pile[K, V] {
   
   def get(k: K): Option[V]
   
-  def >>>[K1, V1](f: (K, V) => (K1, V1)): Pipeline[Pile[K1, V1]] = ???
-  
-  def >>>(sink: Sink[Pile[K,V]]): Pipeline[Pile[K,V]] = ???
+  def >>>[K1, V1](f: (K, V) => (K1, V1)): Pile[K1, V1] = map(f)
   
   def foreach(f: (K, V) => Any): Unit = toMap.foreach(f.tupled)
   

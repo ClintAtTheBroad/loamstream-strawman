@@ -1,6 +1,44 @@
 package loamstream
 
-object Main {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.language.implicitConversions
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+object Main extends App {
+  val source = Source.Literal(1)
+
+  implicit def function1sToFuturesAreTransforms[A, B](f: A => Future[B]): Transform[A, B] = {
+    Transform(f.toString) { f }
+  }
+  
+  implicit def function1sAreTransforms[A, B](f: A => B)(implicit executor: ExecutionContext): Transform[A, B] = {
+    Transform(f.toString) { a =>
+      Future(f(a))
+    }
+  }
+  
+  val f: Int ~> Int = (_: Int) + 1
+  
+  val g: Int ~> Int = (_: Int) * 3
+  
+  val h: Int ~> Double = (_: Int).toDouble
+  
+  val pipeline = source.map(f).map(g).map(h)
+  
+  /*val pipeline1 = source.map { (_: Int) + 1 }*/
+  
+  /*val pipeline2 = for {
+    i <- source
+    plus1 <- f(i)
+    times3 <- g(plus1)
+    d <- h(times3)
+  } yield d*/
+
+  println(Await.result(pipeline.value, Duration.Inf))
+
   /*val source: Source[Int, String] = ???
   
   final case class Foo(s: String)
@@ -22,8 +60,8 @@ object Main {
   //p1 >>> sink
   
   val s = source >>> f >>> g >>> h >>> sink*/
-  
-  import Scheduler.Implicits.Sync
+
+  /*import Scheduler.Implicits.Sync
   
   final case class Foo(s: String)
   
@@ -41,5 +79,5 @@ object Main {
   
   val pipeline = source >>> f >>> g >>> h >>> sink
   
-  pipeline.run()
+  pipeline.run()*/
 }

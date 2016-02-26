@@ -2,8 +2,37 @@ package loamstream
 
 import scala.reflect.ClassTag
 import scala.util.Try
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-final class Pipeline[P] extends PileStream[P] {
+final case class Pipeline[A](upstream: Source[A]) extends Source[A] {
+  override def value(implicit executor: ExecutionContext): Future[A] = upstream.value
+
+  override def map[B](f: A ~> B)(implicit executor: ExecutionContext): Pipeline[B] = Pipeline {
+    Source { () =>
+      for {
+        a <- value
+        b <- f(a)
+      } yield b
+    }
+  }
+  
+  override def flatMap[B](f: A ~> Pipeline[B])(implicit executor: ExecutionContext): Pipeline[B] = Pipeline {
+    Source { () =>
+      for {
+        a <- value
+        src <- f(a)
+        b <- src.value
+      } yield b
+    }
+  }
+}
+
+object Pipeline {
+  def from[A](source: Source[A]): Pipeline[A] = Pipeline(source)
+}
+
+/*final class Pipeline[P] extends PileStream[P] {
 
   def run()(implicit scheduler: Scheduler): Unit = ???
   
@@ -74,67 +103,6 @@ final class Pipeline[P] extends PileStream[P] {
     }
   }
 
-  /*override def partition(p: P => Boolean)(implicit emitter: Scheduler): (Self[P], Self[P]) = {
-    val lhs = makeEmpty[P]
-    val rhs = makeEmpty[P]
-
-    this.foreach { event =>
-      val dest = if (p(event)) lhs else rhs
-
-      dest.accept(event)
-    }
-
-    (lhs, rhs)
-  }
-
-  override def drop(howMany: Int)(implicit emitter: Scheduler): Self[P] = {
-    if (howMany <= 0) { asSelf }
-    else {
-      @volatile var leftToSkip: Int = howMany
-
-      val lock = new AnyRef
-
-      produce[P] { result =>
-        foreach { event =>
-          lock.synchronized {
-            if (leftToSkip <= 0) {
-              result.accept(event)
-            }
-
-            leftToSkip -= 1
-          }
-        }
-      }
-    }
-  }
-
-  override def take(howMany: Int)(implicit scheduler: Scheduler): Self[P] = {
-    if (howMany <= 0) { makeEmpty }
-    else {
-      @volatile var taken: Int = 0
-
-      val lock = new AnyRef
-
-      produce[P] { result =>
-        foreach { event =>
-          var done = lock.synchronized {
-            if (taken < howMany) {
-              result.accept(event)
-            }
-
-            taken += 1
-            
-            taken >= howMany
-          }
-          
-          if(done) {
-            result.cancel()
-          }
-        }
-      }
-    }
-  }*/
-
   private def produce[E](body: Self[E] => Any): Self[E] = {
     val result = makeEmpty[E]
 
@@ -148,4 +116,4 @@ object Pipeline extends HasEmpty[Pipeline] {
   def empty[P]: Pipeline[P] = ???
   
   def fromSource[K, V](source: Source[K, V]): Pipeline[Pile[K, V]] = ???
-}
+}*/

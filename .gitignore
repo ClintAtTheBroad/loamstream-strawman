@@ -1,6 +1,6 @@
 .cache
 .cache-main
-.cache-test
+.cache-tests
 .settings
 .classpath
 .project
