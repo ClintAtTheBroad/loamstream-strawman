@@ -6,7 +6,7 @@ trait Pile[K, V] {
   
   def toMap: Map[K, V]
   
-  def get(k: K): Option[V]
+  def get(k: K): Option[V] = toMap.get(k)
   
   def >>>[K1, V1](f: (K, V) => (K1, V1)): Pile[K1, V1] = map(f)
   
@@ -30,8 +30,6 @@ trait Pile[K, V] {
 object Pile {
   case class MapPile[K, V](map: () => Map[K, V]) extends Pile[K, V] {
     override def toMap: Map[K, V] = map()
-    
-    override def get(k: K): Option[V] = toMap.get(k)
     
     override def collect[K1, V1](f: PartialFunction[(K, V), (K1, V1)]): Pile[K1, V1] = {
       MapPile { () =>

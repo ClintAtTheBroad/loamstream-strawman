@@ -4,11 +4,13 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
 trait Source[A] {
-  def value(implicit executor: ExecutionContext): Future[A]
+  def value: Future[A]
   
-  def map[B](f: A ~> B)(implicit executor: ExecutionContext): Pipeline[B] = Pipeline.from(this).map(f)
+  def toPipeline: Pipeline[A] = Pipeline.from(this)
   
-  def flatMap[B](f: A ~> Pipeline[B])(implicit executor: ExecutionContext): Pipeline[B] = Pipeline.from(this).flatMap(f)
+  def map[B](f: A ~> B)(implicit executor: ExecutionContext): Pipeline[B] = toPipeline.map(f)
+  
+  def flatMap[B](f: A ~> Pipeline[B])(implicit executor: ExecutionContext): Pipeline[B] = toPipeline.flatMap(f)
 }
 
 object Source {
@@ -16,19 +18,25 @@ object Source {
   def of[A](a: A): Source[A] = Literal(a)
   
   def apply[A](f: () => Future[A]): Source[A] = new Source[A] {
-    override def value(implicit executor: ExecutionContext): Future[A] = f()
+    override def value: Future[A] = f()
   }
 
   final case class Literal[A](a: A) extends Source[A] {
-    override def value(implicit executor: ExecutionContext): Future[A] = Future.successful(a)
+    override def value: Future[A] = Future.successful(a)
   }
 
-  final case class Composite[A, B](as: Source[A], bs: Source[B]) extends Source[(A, B)] {
-    override def value(implicit executor: ExecutionContext): Future[(A, B)] = {
+  final case class Composite[A, B](as: Source[A], bs: Source[B])(implicit executor: ExecutionContext) extends Source[(A, B)] {
+    override def value: Future[(A, B)] = {
+      val (futureA, futureB) = (as.value, bs.value)
+      
       for {
-        a <- as.value
-        b <- bs.value
+        a <- futureA
+        b <- futureB
       } yield (a, b)
     }
   }
+  
+  import scala.language.implicitConversions
+  
+  implicit def sourcesArePipelines[A](s: Source[A]): Pipeline[A] = s.toPipeline
 }

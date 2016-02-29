@@ -8,36 +8,77 @@ import loamstream.model.SampleId
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import loamstream.util.Tries
+import java.nio.file.Paths
 
 object Transforms {
-  def toVcfFile: Path ~> VcfFile = Transform("Parse VCF") { path =>
+  lazy val toVcfFile: Path ~> VcfFile = Transform("Parse VCF") { path =>
     import Tries._
-    
-    VcfFile.fromPath(path).toFuture
+
+    //TODO: XXX: Avoid .get
+    VcfFile.fromPath(path).get
   }
-  
-  def getSamples: VcfFile ~> Set[SampleId] = Transform("Extract Sample Ids") { vcfFile =>
-    Future.successful(vcfFile.sampleIds.toSet)
+
+  lazy val getSamples: VcfFile ~> Set[SampleId] = Transform("Extract Sample Ids") { vcfFile =>
+    vcfFile.sampleIds.toSet
   }
+
+  def firstLines(howMany: Int): Path ~> Seq[String] = unixCommand((path: Path) => s"head -n $howMany $path")
   
-  def takeLines(howMany: Int)(implicit executor: ExecutionContext): Path ~> Seq[String] = TakeLines(howMany)
-  
-  final case class TakeLines(howMany: Int)(implicit executor: ExecutionContext) extends (Path ~> Seq[String]) {
-    override val id = s"Take $howMany lines"
-    
-    private def command(p: Path) = s"head -n $p"
-    
-    override def apply(p: Path): Future[Seq[String]] = {
-      Future {
-        import sys.process._
-        
-        val output = command(p).!!
-        
-        val s = scala.io.Source.fromIterable(output)
-        
-        try { s.getLines.toIndexedSeq }
-        finally { s.close() }
+  def lastLines(howMany: Int): Path ~> Seq[String] = unixCommand((path: Path) => s"tail -n $howMany $path")
+
+  def foghorn: Path ~> Seq[String] = pipedUnixCommand { (inputFile, outputFile) => 
+    s"foghorn -l error -f DOS -s 0 -t vnc -i $inputFile -o $outputFile"
+  }
+
+  def unixCommand[A](makeCommand: A => String): A ~> Seq[String] = Transform("Unix Command (TODO)") { (a: A) =>
+    import sys.process._
+
+    makeCommand(a).lineStream
+  }
+
+  def pipedUnixCommand[A](makeCommand: (A, Path) => String): A ~> Seq[String] = Transform("Unix Command (TODO)") { (a: A) =>
+    import sys.process._
+
+    val pipe = makePipe()
+
+    closeWhenFinished(pipe)(makeCommand(a, pipe.path).lineStream)
+  }
+
+  private[loamstream] def closeWhenFinished[A](pipe: Pipe)(stream: Stream[A]): Seq[A] = {
+    val delegate = stream.toIterator
+
+    (new Iterator[A] {
+      override def hasNext: Boolean = delegate.hasNext
+      override def next(): A = {
+        val result = delegate.next()
+
+        try { result } finally {
+          if (!delegate.hasNext) {
+            pipe.close()
+          }
+        }
       }
+    }).toSeq
+  }
+
+  private final case class Pipe(path: Path, close: () => Unit)
+
+  private[this] val lock = new AnyRef
+
+  private def makePipe(): Pipe = {
+    //TODO
+    def makeName(): Path = Paths.get(s"/tmp/loamstream-pipe-${System.currentTimeMillis}${System.nanoTime}")
+
+    def exisits(p: Path): Boolean = p.toFile.exists
+
+    lock.synchronized {
+      val path = Iterator.continually(makeName()).filter(exisits).next()
+
+      import sys.process._
+
+      "mkfifo $path".!!
+
+      Pipe(path, () => "rm $path".!!)
     }
   }
 }

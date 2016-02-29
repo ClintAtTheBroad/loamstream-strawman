@@ -2,23 +2,24 @@ package loamstream
 
 import scala.concurrent.Future
 import scala.util.Try
+import scala.concurrent.ExecutionContext
 
-trait Transform[A, B] /*extends (A => Future[B])*/ {
-  def id: String
+trait Transform[A, B] extends (A => B) {
+  def name: String
   
-  def apply(a: A): Future[B]
+  def apply(a: A): B
 }
 
 object Transform {
-  def sync[A, B](name: String)(f: A => B): Transform[A, B] = new Transform[A, B] {
-    override val id = name
+  def apply[A, B](n: String)(f: A => B): Transform[A, B] = new Transform[A, B] {
+    override val name = n
     
-    override def apply(a: A): Future[B] = Future.successful(f(a))
+    override def apply(a: A): B = f(a)
   }
   
-  def apply[A, B](name: String)(f: A => Future[B]): Transform[A, B] = new Transform[A, B] { 
-    override val id = name
-    
-    override def apply(a: A): Future[B] = f(a)
+  import scala.language.implicitConversions
+  
+  implicit def function1sAreTransforms[A, B](f: A => B)(implicit executor: ExecutionContext): Transform[A, B] = {
+    Transform(f.toString)(f)
   }
 }
