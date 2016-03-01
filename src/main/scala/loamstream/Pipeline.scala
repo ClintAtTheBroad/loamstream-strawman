@@ -7,30 +7,45 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 
-final case class Pipeline[A](upstream: Source[A]) extends Source[A] {
-  override def toString = s"Pipeline($upstream)"
-  
-  override def value: Future[A] = upstream.value
+trait Pipeline[A] {
 
-  def run(maxWaitTime: Duration = Duration.Inf): A = Await.result(value, maxWaitTime)
+  def value: A
   
-  override def map[B](f: A ~> B)(implicit executor: ExecutionContext): Pipeline[B] = Pipeline {
-    for {
-      a <- value
-    } yield f(a)
-  }
+  def run(): A = value
   
-  override def flatMap[B](f: A ~> Pipeline[B])(implicit executor: ExecutionContext): Pipeline[B] = Pipeline {
-    for {
-      a <- value
-      p = f(a)
-      b <- p.value
-    } yield b
-  }
+  def map[B](f: A ~> B): Pipeline[B] = new Pipeline.Mapped(this, f)
+  
+  def flatMap[B](f: A ~> Pipeline[B]): Pipeline[B] = new Pipeline.FlatMapped(this, f)
 }
 
 object Pipeline {
-  def from[A](source: Source[A]): Pipeline[A] = Pipeline(source)
+  def of[A](upstreamValue: A): Pipeline[A] = Source(() => upstreamValue)
   
-  def apply[A](f: Future[A]): Pipeline[A] = Pipeline(Source(f))
+  def apply[A](upstreamValue: () => A): Pipeline[A] = Source(upstreamValue)
+  
+  def from[A](source: Pipeline[A]): Pipeline[A] = Chained(source)
+  
+  final case class Chained[A](upstream: Pipeline[A]) extends Pipeline[A] {
+    override def toString = s"Pipeline.${getClass.getSimpleName}(${upstream})"
+  
+    override lazy val value: A = upstream.value
+  }
+  
+  final case class Source[A](v: () => A) extends Pipeline[A] {
+    override def toString = s"Pipeline.${getClass.getSimpleName}(${v()})"
+    
+    override lazy val value: A = v()
+  }
+  
+  final class Mapped[A, B](upstream: Pipeline[A], transform: A => B) extends Pipeline[B] {
+    override def toString = s"Pipeline.${getClass.getSimpleName}($transform, $upstream)"
+    
+    override lazy val value: B = transform(upstream.value)
+  }
+  
+  final class FlatMapped[A, B](upstream: Pipeline[A], transform: A => Pipeline[B]) extends Pipeline[B] {
+    override def toString = s"Pipeline.${getClass.getSimpleName}($transform, $upstream)"
+    
+    override lazy val value: B = transform(upstream.value).value
+  }
 }

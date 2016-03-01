@@ -5,6 +5,8 @@ import scala.util.Try
 import scala.concurrent.ExecutionContext
 
 trait Transform[A, B] extends (A => B) {
+  override def toString = name
+  
   def name: String
   
   def apply(a: A): B

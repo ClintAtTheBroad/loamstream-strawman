@@ -32,7 +32,7 @@ object Transforms {
 
   def unixCommand[A](makeCommand: A => String): A ~> Seq[String] = Transform("Unix Command (TODO)") { (a: A) =>
     import sys.process._
-
+    
     makeCommand(a).lineStream
   }
 

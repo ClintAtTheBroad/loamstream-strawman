@@ -35,7 +35,7 @@ object Main extends App {
       val firstString = first.mkString(":::")
       val lastString = last.mkString(":::")
       
-      Source.of(Seq(firstString, lastString))
+      Pipeline.of(Seq(firstString, lastString))
     }
   }
   
@@ -48,8 +48,15 @@ object Main extends App {
     Seq(firstString, lastString)
   }
   
+  val p1 = dictFile.map(getFirst10Lines).map(_.head)
+  
+  println("made pipelines") 
+  
   println(pipeline)
   println(p0)
+  println(p1)
 
   println(pipeline.run())
+  
+  println(p1.run())
 }

@@ -7,5 +7,5 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 object Sources {
-  def path(pathName: String): Source[Path] = Source.of(Paths.get(pathName))
+  def path(pathName: String): Pipeline[Path] = Pipeline(() => Paths.get(pathName))
 }
