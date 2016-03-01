@@ -4,6 +4,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
 trait Source[A] {
+  //override def toString = s"Source(...)"
+  
   def value: Future[A]
   
   def toPipeline: Pipeline[A] = Pipeline.from(this)
@@ -17,10 +19,10 @@ object Source {
 
   def of[A](a: A): Source[A] = Literal(a)
   
-  def apply[A](f: () => Future[A]): Source[A] = new Source[A] {
-    override def value: Future[A] = f()
-  }
+  def apply[A](f: Future[A]): Source[A] = Eventually(f)
 
+  final case class Eventually[A](value: Future[A]) extends Source[A] 
+  
   final case class Literal[A](a: A) extends Source[A] {
     override def value: Future[A] = Future.successful(a)
   }

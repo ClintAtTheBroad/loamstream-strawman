@@ -27,14 +27,29 @@ object Main extends App {
   
   val last10Words: Pipeline[Seq[String]] = dictFile.map(getFirst10Lines)
   
+  val second5Words = first10Words.map(_.drop(5).take(5))
+  val secondToLast5Words = first10Words.map(_.dropRight(5).takeRight(5))
+  
+  val p0 = first10Words.flatMap { first =>
+    last10Words.flatMap { last =>
+      val firstString = first.mkString(":::")
+      val lastString = last.mkString(":::")
+      
+      Source.of(Seq(firstString, lastString))
+    }
+  }
+  
   val pipeline: Pipeline[Seq[String]] = for {
-    first <- first10Words
-    last <- last10Words
+    first <- second5Words
+    last <- secondToLast5Words
     firstString = first.mkString(":::")
     lastString = last.mkString(":::")
   } yield {
     Seq(firstString, lastString)
   }
+  
+  println(pipeline)
+  println(p0)
 
   println(pipeline.run())
 }
