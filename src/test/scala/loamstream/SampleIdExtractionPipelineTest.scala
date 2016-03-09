@@ -4,7 +4,8 @@ import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfter
 import loamstream.model.SampleId
 import loamstream.vcf.VcfParser
-final class SampleIdExtractionPipelineTest extends FunSuite with BeforeAndAfter {
+
+final class SampleIdExtractionPipelineTest extends FunSuite {
   test("Pipeline successfully extracts sample IDs from VCF") {
     
     val pipeline: Pipeline[Set[String]] = for {
