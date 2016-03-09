@@ -1,6 +1,5 @@
 package loamstream
 
-import loamstream.vcf.VcfFile
 import java.io.File
 import java.nio.file.Path
 import scala.util.Try
@@ -9,17 +8,16 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import loamstream.util.Tries
 import java.nio.file.Paths
+import loamstream.vcf.VcfParser
+import loamstream.vcf.VcfParser
 
 object Transforms {
-  lazy val toVcfFile: Path ~> VcfFile = Transform("Parse VCF") { path =>
-    import Tries._
-
-    //TODO: XXX: Avoid .get
-    VcfFile.fromPath(path).get
+  lazy val toVcfParser: Path ~> VcfParser = Transform("Parse VCF") { path =>
+    VcfParser(path)
   }
 
-  lazy val getSamples: VcfFile ~> Set[SampleId] = Transform("Extract Sample Ids") { vcfFile =>
-    vcfFile.sampleIds.toSet
+  lazy val getSamples: VcfParser ~> Set[SampleId] = Transform("Extract Sample Ids") { vcfFile =>
+    vcfFile.samples.map(SampleId(_)).toSet
   }
 
   def firstLines(howMany: Int): Path ~> Seq[String] = unixCommand((path: Path) => s"head -n $howMany $path")

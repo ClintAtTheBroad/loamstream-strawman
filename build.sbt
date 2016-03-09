@@ -2,10 +2,8 @@ lazy val Versions = new {
   val App = "0.1"
   val Scala = "2.11.7"
   val ScalaTest = "2.2.6"
-  val Logback = "1.1.3"
-  val DataFlow = "1.4.0"
-  val ScalaFlow = "0.1.0"
-  val DataFlowDSL = "0.0.1-SNAPSHOT"
+  val Htsjdk = "2.1.0"
+  val LogBack = "1.1.6"
 }
 
 lazy val testDeps = Seq(
@@ -15,7 +13,9 @@ lazy val testDeps = Seq(
 lazy val mainDeps = Seq(
   "org.scala-lang" % "scala-library" % Versions.Scala,
   "org.scala-lang" % "scala-compiler" % Versions.Scala,
-  "org.scala-lang" % "scala-reflect" % Versions.Scala
+  "org.scala-lang" % "scala-reflect" % Versions.Scala,
+  "com.github.samtools" % "htsjdk" % Versions.Htsjdk,
+  "ch.qos.logback" % "logback-classic" % Versions.LogBack
 )
 
 lazy val commonSettings = Seq(

@@ -21,7 +21,7 @@ object Transform {
   
   import scala.language.implicitConversions
   
-  implicit def function1sAreTransforms[A, B](f: A => B)(implicit executor: ExecutionContext): Transform[A, B] = {
+  implicit def function1sAreTransforms[A, B](f: A => B): Transform[A, B] = {
     Transform(f.toString)(f)
   }
 }
