@@ -1,5 +1,9 @@
 package loamstream
 
+/**
+ * @author clint
+ * date: Mar 11, 2016
+ */
 trait Pile[K, V] {
   
   def collect[K1, V1](f: PartialFunction[(K, V), (K1, V1)]): Pile[K1, V1]
