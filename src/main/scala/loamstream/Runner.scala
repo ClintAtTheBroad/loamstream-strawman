@@ -9,7 +9,9 @@ trait Runner {
 }
 
 object Runner {
-  object Default extends Runner {
-    override def run[A](f: Pipeline[A]): A = f.foldMap(Mapping.Default)
+  def fromMapping(m: Mapping): Runner = new Runner {
+    override def run[A](pipeline: Pipeline[A]): A = pipeline.foldMap(m)
   }
+  
+  lazy val Default = fromMapping(Mapping.Default)
 }

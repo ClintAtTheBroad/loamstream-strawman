@@ -13,14 +13,23 @@ final class SampleIdExtractionPipelineTest extends FunSuite {
     
     import PipelineOp._
     
-    val pipeline: Pipeline[Set[String]] = for {
+    val pipeline: Pipeline[Pile.Set[String]] = for {
       path <- fileFromClasspath("mini.vcf")
-      vcf <- parseVcf(path)
-      samples <- getSamples(vcf)
+      samples <- getSamplesFromFile(path)
     } yield samples
     
-    val sampleIds = Runner.Default.run(pipeline)
+    val expected = Set("Sample1", "Sample2", "Sample3")
     
-    assert(sampleIds == Set("Sample1", "Sample2", "Sample3"))
+    {
+      val sampleIds = Runner.Default.run(pipeline).keySet
+    
+      assert(sampleIds == expected)
+    }
+    
+    {
+      val sampleIds = pipeline.runWith(Mapping.Default).keySet
+      
+      assert(sampleIds == expected)
+    }
   }
 }
