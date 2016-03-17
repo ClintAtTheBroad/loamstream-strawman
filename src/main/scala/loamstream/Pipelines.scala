@@ -21,11 +21,11 @@ object Pipelines {
   
   def getSamplesIdsFromClasspathFile(fileName: String): Pipeline[Pile.Set[String]] = getSampleIdsFrom(fileFromClasspath(fileName))
   
-  def combine(p1: Pipeline[Path], p2: Pipeline[Path]): Pipeline[Path] = {
+  /*def combine(p1: Pipeline[Path], p2: Pipeline[Path]): Pipeline[Path] = {
     for {
       file1 <- p1
       file2 <- p2
-      dest <- combineFiles(file1, file2)
+      dest <- combine(file1, file2)
     } yield dest
-  }
+  }*/
 }
