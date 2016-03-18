@@ -11,6 +11,9 @@ import java.io.File
 import com.typesafe.config.Config
 import java.nio.file.Path
 import loamstream.config.LoamConfig
+import scala.util.Try
+import scala.sys.process.Process
+import scala.sys.process.ProcessBuilder
 
 /**
  * @author clint
@@ -23,96 +26,27 @@ trait Mapping extends (PipelineOp ~> Id) {
 object Mapping {
   import PipelineOp._
 
-  private def run(command: String): Int = {
-    import sys.process._
+  def fromConfig(config: Config): Try[Mapping] = LoamConfig.fromConfig(config).map(FromConfig(_))
 
-    command.!
-  }
+  def fromLoamConfig(loamConfig: LoamConfig): FromConfig = FromConfig(loamConfig)
 
   final case class FromConfig(config: LoamConfig) extends Mapping {
 
-    private implicit val loamConfig = config
-
     override def apply[A](op: PipelineOp[A]): Id[A] = op match {
       case FsPath(p)                => Paths.get(p)
       case FileFromClasspath(name)  => Paths.get(getClass.getClassLoader.getResource(name).getFile)
       case GetSamplesFromFile(path) => Pile.Set.from(VcfParser(path).samples.toSet)
-      /*case CombineFiles(lhs, rhs) => {
-        val (dest, _) = withTempFile(dest => run(combineFilesCommand(lhs, rhs, dest)))
-        
-        dest
-      }
-      case Compress(input) => {
-        val (dest, _) = withTempFile(dest => run(compressCommand(input, dest)))
-        
-        dest
-      }
-      case Burden(input) => {
-        val (_, output) = withTempFile(PipelineOp.Products.BurdenOutput(_))
-        
-        output
-      }*/
-      case Command(name, desc, gatherResults, params) => {
-
-        run(desc.commandString(params: _*))
-
-        gatherResults()
-      }
+      case BuildCommand(invocation) => builderFrom(invocation)
+      case RunCommand(invocation) => builderFrom(invocation).!
     }
+    
+    private def builderFrom(invocation: Invocation): ProcessBuilder = {
+      //TODO: Fail loudly here, or at another time?
+      val desc = config.commands(invocation.name)
 
-    private def withTempFile[A](f: Path => A): (Path, A) = {
-      val file = tempFile
+      val commandLine = desc.commandString(invocation.params: _*)
 
-      (file, f(file))
-    }
-
-    private def tempFile: Path = File.createTempFile("loamstream", "combine-vcfs").toPath
-
-    /*private def combineFilesCommand(lhs: Path, rhs: Path, dest: Path): String = {
-      val gatkJarPath = Paths.get(config.commands("combine"))
-      
-      val fastaFile = Paths.get(config.getString("loamstream.commands.combine.fastaFilePath"))
-      
-      val variantFilesChunk = s"--variant $lhs --variant $rhs"
-      
-      s"java -jar $gatkJarPath -T CombineVariants -R $fastaFile $variantFilesChunk -o $dest -genotypeMergeOptions UNIQUIFY"
-    }*/
-
-    private def compressCommand(input: Path, output: Path): String = {
-      //TODO
-
-      s"foghorn -l error -f DOS -s 0 -t vnc -i $input -o $output"
+      Process(commandLine)
     }
   }
-
-  object Default extends Mapping {
-    override def apply[A](op: PipelineOp[A]): Id[A] = op match {
-      case FsPath(p)                => Paths.get(p)
-      case FileFromClasspath(name)  => Paths.get(getClass.getClassLoader.getResource(name).getFile)
-      case GetSamplesFromFile(path) => Pile.Set.from(VcfParser(path).samples.toSet)
-      /*case CombineFiles(lhs, rhs) => {
-        val destFile = File.createTempFile("loamstream", "combine-vcfs")
-        
-        destFile.toPath
-      }
-      case Compress(path) => {
-        val destFile = File.createTempFile("loamstream", "combine-vcfs")
-        
-        destFile.toPath
-      }
-      case Burden(input) => {
-        val resultsFile = File.createTempFile("loamstream", "combine-vcfs")
-        
-        PipelineOp.Products.BurdenOutput(resultsFile.toPath)
-      }*/
-      case Command(name, desc, gatherResults, params) => {
-
-        run(desc.commandString(params: _*))
-
-        gatherResults()
-      }
-    }
-  }
-
-  def emptyMap[K, V](kt: ClassTag[K], vt: ClassTag[V]): Map[K, V] = Map.empty
 }

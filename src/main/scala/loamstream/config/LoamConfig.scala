@@ -13,9 +13,11 @@ import loamstream.util.Tries
 final case class LoamConfig(commands: Map[String, CommandDescription])
 
 object LoamConfig {
-  val prefix = "loamstream"
+  val Empty: LoamConfig = LoamConfig(Map.empty)
   
-  def toKey(s: String): String = s"$prefix.$s"
+  private[config] val prefix = "loamstream"
+  
+  private[config] def toKey(s: String): String = s"$prefix.$s"
   
   import ConfigEnrichments._
 

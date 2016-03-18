@@ -14,20 +14,18 @@ import java.io.File
 final class CombineVcfsTest extends FunSuite {
   test("Should be able to combine VCFs with GATK") {
     import PipelineOp._
+    import Expectation._
 
-    //TODO
-    def tempFile = File.createTempFile("foo", "bar").toPath
-    
     //TODO
     implicit val config = LoamConfig.fromConfig(ConfigFactory.parseString("")).get
     
     val pipeline: Pipeline[Path] = for {
       p1 <- fileFromClasspath("mini.vcf")
       p2 <- fileFromClasspath("mini.vcf")
-      combined <- command("combine", () => tempFile)(p1, p2)
+      combined <- runCommand("combine", producingFile("combined.vcf"))(p1, p2)
     } yield combined
     
-    val combined = Runner.Default.run(pipeline)
+    val combined = pipeline.runWith(Mapping.fromLoamConfig(config))
     
     assert(Files.exists(combined))
     

@@ -3,6 +3,7 @@ package loamstream
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfter
 import loamstream.vcf.VcfParser
+import loamstream.config.LoamConfig
 
 /**
  * @author clint
@@ -14,22 +15,16 @@ final class SampleIdExtractionPipelineTest extends FunSuite {
     import PipelineOp._
     
     val pipeline: Pipeline[Pile.Set[String]] = for {
-      path <- fileFromClasspath("mini.vcf")
+      path <- locate("classpath:mini.vcf")
       samples <- getSamplesFromFile(path)
     } yield samples
     
     val expected = Set("Sample1", "Sample2", "Sample3")
     
-    {
-      val sampleIds = Runner.Default.run(pipeline).keySet
+    val mapping = Mapping.fromLoamConfig(LoamConfig.Empty)
     
-      assert(sampleIds == expected)
-    }
+    val sampleIds = pipeline.runWith(mapping).keySet
     
-    {
-      val sampleIds = pipeline.runWith(Mapping.Default).keySet
-      
-      assert(sampleIds == expected)
-    }
+    assert(sampleIds == expected)
   }
 }

@@ -14,26 +14,23 @@ import loamstream.PipelineOp.Products.BurdenOutput
 final class BurdenPipelineTest extends FunSuite {
   test("The burden pipeline should run") {
     import PipelineOp._
-    
-    //TODO
-    def tempFile = File.createTempFile("foo", "bar").toPath
-    
-    //TODO
-    implicit val config = LoamConfig.fromConfig(ConfigFactory.parseString("")).get 
-    
     import PipelineOp.Products.BurdenOutput
+    import Expectation._
     
-    val pipeline: Pipeline[BurdenOutput] = for {
-      vcf1 <- fsPath("burden-input1.vcf") //TODO
-      vcf2 <- fsPath("burden-input2.vcf") //TODO
-      combined <- command("combine", () => tempFile)(vcf1, vcf2)
-      compressed <- command("compress", () => tempFile)(combined)
-      output <- command("burden", () => BurdenOutput(tempFile))(compressed)
-    } yield output
+    //TODO
+    val config = LoamConfig.fromConfig(ConfigFactory.parseString("")).get 
     
-    val burdenOutput = pipeline.runWith(Mapping.Default)
+    val pipeline: Pipeline[Int] = for {
+      vcf1 <- locate("burden-input1.vcf") //TODO
+      vcf2 <- locate("burden-input2.vcf") //TODO
+      combined <- runCommand("combine", producingFile("combined.vcf"))(vcf1, vcf2)
+      compressed <- runCommand("compress", producingFile("compressed.vcf"))(combined)
+      burdenResult <- runCommand("burden")(compressed)
+    } yield burdenResult
     
-    assert(Files.exists(burdenOutput.results))
+    val burdenStatus = pipeline.runWith(Mapping.fromLoamConfig(config))
+    
+    assert(burdenStatus == 0)
     
     //TODO: More
   }

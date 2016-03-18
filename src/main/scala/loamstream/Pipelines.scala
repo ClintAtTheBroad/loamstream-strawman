@@ -20,12 +20,4 @@ object Pipelines {
   def getSamplesIdsFromFile(fileName: String): Pipeline[Pile.Set[String]] = getSampleIdsFrom(fsPath(fileName))
   
   def getSamplesIdsFromClasspathFile(fileName: String): Pipeline[Pile.Set[String]] = getSampleIdsFrom(fileFromClasspath(fileName))
-  
-  /*def combine(p1: Pipeline[Path], p2: Pipeline[Path]): Pipeline[Path] = {
-    for {
-      file1 <- p1
-      file2 <- p2
-      dest <- combine(file1, file2)
-    } yield dest
-  }*/
 }

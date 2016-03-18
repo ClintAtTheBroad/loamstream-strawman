@@ -21,7 +21,6 @@ final case class CommandDescription(tpe: CommandType, paramTypes: Seq[Type], res
  *   template = "foo %s --bar %s"
  * }
  */
-
 object CommandDescription extends App {
 
   def fromConfig(config: Config): Try[CommandDescription] = {
@@ -42,12 +41,13 @@ object CommandDescription extends App {
     }
   }
   
+  //NB: From SO
   private def toType(s: String): Type = {
     import scala.reflect.api
 
     def stringToTypeTag[A](name: String): TypeTag[A] = {
-      val c = Class.forName(name) // obtain java.lang.Class object from a string
-      val mirror = runtimeMirror(c.getClassLoader) // obtain runtime mirror
+      val c = Class.forName(name)
+      val mirror = runtimeMirror(c.getClassLoader)
       val sym = mirror.staticClass(name) // obtain class symbol for `c`
       val tpe = sym.selfType // obtain type object for `c`
       // create a type tag which contains above type object

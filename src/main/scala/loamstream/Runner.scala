@@ -12,6 +12,4 @@ object Runner {
   def fromMapping(m: Mapping): Runner = new Runner {
     override def run[A](pipeline: Pipeline[A]): A = pipeline.foldMap(m)
   }
-  
-  lazy val Default = fromMapping(Mapping.Default)
 }
