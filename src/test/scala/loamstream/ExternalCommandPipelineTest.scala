@@ -16,10 +16,6 @@ final class ExternalCommandPipelineTest extends FunSuite {
     
     val config = LoamConfig.load("loamstream-external-commands-test").get 
     
-    val combinedFileName = "target/combined.txt"
-    val compressedFileName = "target/compressed.txt"
-    val resultsFileName = "target/results.txt"
-    
     val pipeline: Pipeline[Path] = for {
       fileA <- locate("src/test/resources/a.txt")
       fileB <- locate("src/test/resources/b.txt")
