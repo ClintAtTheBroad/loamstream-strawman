@@ -4,6 +4,7 @@ import loamstream.commands.CommandDescription
 import com.typesafe.config.Config
 import scala.util.Try
 import loamstream.util.Tries
+import com.typesafe.config.ConfigFactory
 
 /**
  * @author clint
@@ -21,6 +22,12 @@ object LoamConfig {
   
   import ConfigEnrichments._
 
+  def load(prefix: String): Try[LoamConfig] = {
+    def loadConfigFile = Try(ConfigFactory.load(prefix).withFallback(ConfigFactory.load()))
+    
+    loadConfigFile.flatMap(fromConfig)
+  }
+  
   def fromConfig(config: Config): Try[LoamConfig] = {
     val commandsKey = toKey("commands")
     

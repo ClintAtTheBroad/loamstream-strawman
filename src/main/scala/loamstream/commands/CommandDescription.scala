@@ -4,21 +4,25 @@ import scala.util.Try
 import com.typesafe.config.Config
 import scala.reflect.runtime.universe._
 import loamstream.config.ConfigEnrichments
+import java.nio.file.Paths
+import loamstream.Expectation
+import java.nio.file.Path
 
 /**
  * @author clint
  * date: Mar 16, 2016
  */
-final case class CommandDescription(tpe: CommandType, paramTypes: Seq[Type], resultType: Type, template: (Any*) => String) {
-  def commandString(params: Any*): String = template(params: _*)
+//TODO: Don't hard-code expectation type if possible
+//TODO: Are paramTypes and resultType necessary?
+final case class CommandDescription(commandType: CommandType, template: (Any*) => String, produces: Option[Path]) {
+  def commandString(params: Any*): String = template((params ++ produces): _*)
 }
 
 /*
  * combine {
- *   type = "unix"
- *   params = ["scala.Int"]
- *   result = "scala.Int"
- *   template = "foo %s --bar %s"
+ *   type = "simple" 
+ *   template = "foo %s --bar %s > %s"
+ *   produces = "/path/to/expected/results"
  * }
  */
 object CommandDescription extends App {
@@ -33,31 +37,11 @@ object CommandDescription extends App {
     for {
       typeName <- config.tryString("type")
       tpe <- CommandType.fromString(typeName)
-      params <- config.tryStringList("params")
-      result <- config.tryString("result")
       template <- config.tryString("template")
+      produces <- config.tryString("produces")
+      expectation = Option(Paths.get(produces))
     } yield {
-      CommandDescription(tpe, params.map(toType), toType(result), toTemplateFn(template))
+      CommandDescription(tpe, toTemplateFn(template), expectation)
     }
-  }
-  
-  //NB: From SO
-  private def toType(s: String): Type = {
-    import scala.reflect.api
-
-    def stringToTypeTag[A](name: String): TypeTag[A] = {
-      val c = Class.forName(name)
-      val mirror = runtimeMirror(c.getClassLoader)
-      val sym = mirror.staticClass(name) // obtain class symbol for `c`
-      val tpe = sym.selfType // obtain type object for `c`
-      // create a type tag which contains above type object
-      TypeTag(mirror, new api.TypeCreator {
-        def apply[U <: api.Universe with Singleton](m: api.Mirror[U]) =
-          if (m eq mirror) tpe.asInstanceOf[U#Type]
-          else throw new IllegalArgumentException(s"Type tag defined in $mirror cannot be migrated to other mirrors.")
-      })
-    }
-    
-    stringToTypeTag(s).tpe
   }
 }

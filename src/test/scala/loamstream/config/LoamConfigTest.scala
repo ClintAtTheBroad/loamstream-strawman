@@ -4,6 +4,8 @@ import org.scalatest.FunSuite
 import scala.reflect.runtime.universe._
 import com.typesafe.config.ConfigFactory
 import loamstream.commands.CommandType
+import loamstream.Expectation
+import java.nio.file.Paths
 
 /**
  * @author clint
@@ -11,20 +13,28 @@ import loamstream.commands.CommandType
  */
 final class LoamConfigTest extends FunSuite {
   test("Should be able to parse a config file properly") {
-    val configString = """
+    val complexCommand = """perl -e 'foreach my $line (<>) {chomp $line; my $size = length($line); print substr($line,0,1),"x",$size,"\n";}'"""
+    val threeQuotes = "\"\"\""
+    
+    val quotedComplexCommand = s"$threeQuotes$complexCommand$threeQuotes"
+    
+    val configString = s"""
       loamstream {
         commands {
           foo {
-            type = "unix"
-            params = ["scala.Int", "scala.Int"]
-            result = "java.lang.String"
+            type = simple
             template = "foo %d --bar %d"
+            produces = "/path/to/expected/results"
           }
           bar {
-            type = "unix"
-            params = ["scala.Double", "java.lang.String", "scala.Long"]
-            result = "scala.Int"
+            type = transform
             template = "bar %s --bar %s --baz %d"
+            produces = "/path/to/expected/results"
+          }
+          baz {
+            type = transform
+            template = $quotedComplexCommand
+            produces = "/foo/bar/baz"
           }
         }
       }
@@ -38,18 +48,17 @@ final class LoamConfigTest extends FunSuite {
     
     val bar = loamConf.commands("bar")
     
-    assert(loamConf.commands.size == 2)
+    val baz = loamConf.commands("baz")
     
-    assert(foo.tpe == CommandType.Unix)
-    assert(foo.paramTypes == Seq(toType[Int], toType[Int]))
-    assert(foo.resultType == toType[java.lang.String])
+    assert(loamConf.commands.size == 3)
+    
     assert(foo.commandString(42, 99) == "foo 42 --bar 99")
+    assert(foo.produces == Some(Paths.get("/path/to/expected/results")))
     
-    assert(bar.tpe == CommandType.Unix)
-    assert(bar.paramTypes == Seq(toType[Double], toType[java.lang.String], toType[Long]))
-    assert(bar.resultType == toType[Int])
     assert(bar.commandString(1.23d, "asdf", 42L) == "bar 1.23 --bar asdf --baz 42")
+    assert(bar.produces == Some(Paths.get("/path/to/expected/results")))
+    
+    assert(baz.commandString() == complexCommand)
+    assert(baz.produces == Some(Paths.get("/foo/bar/baz")))
   }
-  
-  private def toType[A : TypeTag]: Type = typeTag[A].tpe 
 }

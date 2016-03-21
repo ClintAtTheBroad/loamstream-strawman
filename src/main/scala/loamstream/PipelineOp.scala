@@ -16,6 +16,8 @@ import scala.sys.process.ProcessBuilder
 sealed trait PipelineOp[+A]
 
 object PipelineOp {
+  def literal[A](a: => A): Pipeline[A] = Free.liftF(Literal(() => a))
+  
   def locate(path: String): Pipeline[Path] = {
     val classpathPrefix = "classpath:"
     
@@ -35,29 +37,21 @@ object PipelineOp {
 
   //TODO: Handle missing commands
   //TODO: Fail now on missing commands, or later, when pipeline is run??
-  def buildCommand(name: String)(params: Any*): Pipeline[ProcessBuilder] = Free.liftF(BuildCommand(Invocation(name, params.toSeq)))
+  def buildCommand(name: String)(params: Any*): Pipeline[ProcessBuilder] = buildCommand(Invocation(name, params.toSeq))
   
   def buildCommand(invocation: Invocation): Pipeline[ProcessBuilder] = Free.liftF(BuildCommand(invocation))
 
-  def runCommand(name: String)(params: Any*): Pipeline[Int] = Free.liftF(RunCommand(Invocation(name, params.toSeq)))
+  def runCommand(name: String)(params: Any*): Pipeline[CommandResult] = runCommand(Invocation(name, params.toSeq))
   
-  def runCommand[A](name: String, expectation: Expectation[A])(params: Any*): Pipeline[A] = {
-    for {
-      result <- expectation.toPipeline(Invocation(name, params.toSeq))
-    } yield result
-  }
+  def runCommand(invocation: Invocation): Pipeline[CommandResult] = Free.liftF(RunCommand(invocation))
   
+  final case class Literal[A](a: () => A) extends PipelineOp[A]
   final case class FsPath(path: String) extends PipelineOp[Path]
   final case class FileFromClasspath(resourceName: String) extends PipelineOp[Path]
   final case class GetSamplesFromFile(path: Path) extends PipelineOp[Pile.Set[String]]
   
-  final case class Invocation(name: String, params: Seq[Any])
-  
-  final case class RunCommand(i: Invocation) extends PipelineOp[Int]
+  final case class RunCommand(i: Invocation) extends PipelineOp[CommandResult]
   
   final case class BuildCommand(i: Invocation) extends PipelineOp[ProcessBuilder]
   
-  object Products {
-    final case class BurdenOutput(results: Path)
-  }
 }

@@ -12,5 +12,12 @@ package object loamstream {
     def runWith(mapping: Mapping): A = {
       Runner.fromMapping(mapping).run(pipeline)
     }
+    
+    def zip[B](other: Pipeline[B]): Pipeline[(A, B)] = {
+      for {
+        a <- pipeline
+        b <- other
+      } yield (a, b)
+    }
   }
 }
