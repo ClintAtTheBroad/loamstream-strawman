@@ -4,9 +4,7 @@
 * A simplified view of abstract pipelines as a series of steps, lineraized from a DAG of dependencies, while also allowing steps to run in parallel.
 * A (relatively) simple framework for adding new pipeline steps.
 * The ability to compose new pipelines from existing ones by joining them together, linearizing sets of them, and applying other combinators, while preserving maximum type safety.
-
 ======
-
 ### Disclaimer
 This is very much a strawman prototype - it skips some error handling and
 includes some hacky code for invoking external commands - but it should
@@ -17,10 +15,12 @@ I was concerned that the current design makes defining pipelines particularly ve
 
 ### Summary
 This code uses a library to provide a lot of the monadic machinery needed to allow building pipelines with a succinct, expressive API oriented to for-comprehensions, `map`, and `flatMap`.  Notably, none of that machinery needs to be written by the LoamStream team.  All we need to provide are:
+
 1. A set of pipeline steps encoded as regular JVM classes
 2. A function that maps each type of step to a value, performs side-effects, runs commands, etc.
 
 With those two things, we can
+
 1. Build up graphs representing a description of a computation to be performed (an abstract pipeline).
 2. Examine those graphs, serialize them, transform them, or whatever - they're just data.
 2. Execute that graph/description as many times as we want, with as many different runtime configurations as we want, at any time after the graph is built.
