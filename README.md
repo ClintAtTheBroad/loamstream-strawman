@@ -1,17 +1,17 @@
 # Clint's LoamStream Experiment
 ======
-
-#### An experimental reformulation of Loamstream's core concepts. Provides:
-..* An API for constructing abstract pipelines that's compatible with Scala's for-comprehension syntactic sugar.
-..* A simplified view of abstract pipelines as a series of steps, lineraized from a DAG of dependencies, while also allowing steps to run in parallel.
-..* A (relatively) simple framework for adding new pipeline steps.
-..* The ability to compose new pipelines from existing ones by joining them together, linearizing sets of them, and applying other combinators, while preserving maximum type safety.
-
+## An experimental reformulation of Loamstream's core concepts. Provides:
+* An API for constructing abstract pipelines that's compatible with Scala's for-comprehension syntactic sugar.
+* A simplified view of abstract pipelines as a series of steps, lineraized from a DAG of dependencies, while also allowing steps to run in parallel.
+* A (relatively) simple framework for adding new pipeline steps.
+* The ability to compose new pipelines from existing ones by joining them together, linearizing sets of them, and applying other combinators, while preserving maximum type safety.
 ======
-
+### Disclaimer
 This is very much a strawman prototype - it skips some error handling and
 includes some hacky code for invoking external commands - but it should
 suffice as a proof-of-concept.
+
+### Rationale
 
 The core of my idea is to make a more succinct internal API for building
 abstract pipelines using for-comprehensions.  For example, in [SampleIdExtractionPipelineTest](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/test/scala/loamstream/SampleIdExtractionPipelineTest.scala) the main event is:
@@ -23,7 +23,7 @@ val pipeline: Pipeline[Pile.Set[String]] = for {
 } yield samples
 ```
 
-Here, Pipeline (set out in [loamstream/package.scala](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/package.scala)) is an alias for the free monad implementation from the [Cats library](http://typelevel.org/cats/) (the jargon is largely irrelevant), parameterized on [loamstream.PipelineStep](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/PipelineStep.scala). PipelineStep represents a single step in an abstract pipeline, and Pipeline represents an abstract pipeline.
+Here, `Pipeline` (set out in [loamstream/package.scala](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/package.scala)) is an alias for the free monad implementation from the [Cats library](http://typelevel.org/cats/) (the jargon is largely irrelevant), parameterized on [loamstream.PipelineStep](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/PipelineStep.scala). `PipelineStep` represents a single step in an abstract pipeline, and `Pipeline` represents an abstract pipeline.
 
 Or, `Pipeline[A]` is a *description* of some set of steps that will ultimately produce an `A`.  In the above example, the Pipeline will produce a `Pile.Set[String]`.  (`Pile.Set` is a placeholder class representing a Pile-like data structure backed by a Scala Set.  It's there to show that Pipelines can produce something kinda-sorta Loamstream-ish, nothing more.)
 
