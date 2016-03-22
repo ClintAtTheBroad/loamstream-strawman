@@ -1,29 +1,29 @@
 package loamstream
 
+import java.nio.file.Path
+
 import java.nio.file.Paths
 
-import scala.reflect.ClassTag
+import scala.sys.process.ProcessBuilder
+import scala.util.Try
+
+import com.typesafe.config.Config
 
 import cats.{ Id, ~> }
-import loamstream.vcf.VcfParser
-import java.nio.file.Files
-import java.io.File
-import com.typesafe.config.Config
-import java.nio.file.Path
-import loamstream.config.LoamConfig
-import scala.util.Try
-import scala.sys.process.Process
-import scala.sys.process.ProcessBuilder
+import loamstream.commands.CommandResult
 import loamstream.commands.CommandType
+import loamstream.commands.Invocation
+import loamstream.config.LoamConfig
+import loamstream.vcf.VcfParser
 
 /**
  * @author clint
  * date: Mar 11, 2016
  */
-trait Mapping extends (PipelineOp ~> Id)
+trait Mapping extends (PipelineStep ~> Id)
 
 object Mapping {
-  import PipelineOp._
+  import PipelineStep._
 
   def fromConfig(config: Config): Try[Mapping] = LoamConfig.fromConfig(config).map(FromConfig(_))
 
@@ -31,7 +31,7 @@ object Mapping {
 
   final case class FromConfig(config: LoamConfig) extends Mapping {
     //TODO: Fail loudly here, or at another time?
-    override def apply[A](op: PipelineOp[A]): Id[A] = op match {
+    override def apply[A](op: PipelineStep[A]): Id[A] = op match {
       case Literal(a)               => a()
       case FsPath(p)                => Paths.get(p)
       case FileFromClasspath(name)  => Paths.get(getClass.getClassLoader.getResource(name).getFile)
@@ -51,12 +51,11 @@ object Mapping {
     private def file(name: String) = new java.io.File(name)
     
     private def resolve(invocation: Invocation): ResolvedInvocation = {
+      import scala.sys.process._
       //TODO: Fail loudly here, or at another time?
       val desc = config.commands(invocation.name)
 
       val commandLine = desc.commandString(invocation.params: _*)
-
-      import scala.sys.process._
       
       //TODO: Fix, super-fragile
       val builder = desc.commandType match {

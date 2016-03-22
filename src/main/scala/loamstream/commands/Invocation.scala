@@ -1,6 +1,4 @@
-package loamstream
-
-import java.nio.file.Path
+package loamstream.commands
 
 /**
  * @author clint

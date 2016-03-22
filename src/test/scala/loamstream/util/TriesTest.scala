@@ -9,7 +9,7 @@ import scala.util.Failure
  * @author clint
  * date: Feb 3, 2016
  */
-final class TriesSuite extends FunSuite {
+final class TriesTest extends FunSuite {
   import Tries.failure
   
   test("failure") {

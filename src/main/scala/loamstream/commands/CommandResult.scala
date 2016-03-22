@@ -1,4 +1,4 @@
-package loamstream
+package loamstream.commands
 
 import java.nio.file.Path
 

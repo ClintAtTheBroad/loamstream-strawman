@@ -4,7 +4,6 @@ import org.scalatest.FunSuite
 import scala.reflect.runtime.universe._
 import com.typesafe.config.ConfigFactory
 import loamstream.commands.CommandType
-import loamstream.Expectation
 import java.nio.file.Paths
 
 /**

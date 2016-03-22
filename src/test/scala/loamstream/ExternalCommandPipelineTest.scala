@@ -12,7 +12,7 @@ import java.nio.file.Files
  */
 final class ExternalCommandPipelineTest extends FunSuite {
   test("A pipeline calling external tools should run") {
-    import PipelineOp._
+    import PipelineStep._
     
     val config = LoamConfig.load("loamstream-external-commands-test").get 
     

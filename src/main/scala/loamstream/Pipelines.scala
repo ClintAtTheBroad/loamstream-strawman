@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
  * date: Mar 14, 2016
  */
 object Pipelines {
-  import PipelineOp._
+  import PipelineStep._
   
   def getSampleIdsFrom(pathPipeline: Pipeline[Path]): Pipeline[Pile.Set[String]] = {
     for {

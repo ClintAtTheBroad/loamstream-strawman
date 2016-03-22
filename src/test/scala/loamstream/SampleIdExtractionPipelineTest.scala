@@ -12,7 +12,7 @@ import loamstream.config.LoamConfig
 final class SampleIdExtractionPipelineTest extends FunSuite {
   test("Pipeline successfully extracts sample IDs from VCF") {
     
-    import PipelineOp._
+    import PipelineStep._
     
     val pipeline: Pipeline[Pile.Set[String]] = for {
       path <- locate("classpath:mini.vcf")

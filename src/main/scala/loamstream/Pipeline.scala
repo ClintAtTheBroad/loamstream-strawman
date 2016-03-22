@@ -15,9 +15,9 @@ import java.nio.file.Paths
  */
 object Pipeline extends App {
   //TODO: CBF Magic?
-  //NB: Dumb, proof-of-concept version; maybe should return Pipeline[Seq[A]] ?
+  //NB: Dumb, proof-of-concept version
   def parallelize[A](pas: Seq[Pipeline[A]], mapping: Mapping)(implicit executor: ExecutionContext): Pipeline[Future[Seq[A]]] = {
-    PipelineOp.literal {
+    PipelineStep.literal {
       val futures = pas.map { pipeline =>
         Future(pipeline.runWith(mapping))
       }
@@ -30,7 +30,7 @@ object Pipeline extends App {
   //Assemble a sequence of pipelines into one long pipeline that executes each step in order
   def sequence[A](pas: Seq[Pipeline[A]]): Pipeline[Seq[A]] = {
     //Use a vector for faster appending
-    val z: Pipeline[Seq[A]] = PipelineOp.literal(Vector.empty)
+    val z: Pipeline[Seq[A]] = PipelineStep.literal(Vector.empty)
 
     pas.foldLeft(z) { (acc, pa) =>
       for {

@@ -6,7 +6,7 @@ import cats.free.Free
  * date: Mar 11, 2016
  */
 package object loamstream {
-  type Pipeline[A] = Free[PipelineOp, A]
+  type Pipeline[A] = Free[PipelineStep, A]
   
   implicit final class PipelineOps[A](val pipeline: Pipeline[A]) extends AnyVal {
     def runWith(mapping: Mapping): A = {
