@@ -13,16 +13,19 @@ import java.nio.file.Paths
  * @author clint
  * date: Mar 18, 2016
  */
-object Pipeline extends App {
+object Pipeline {
   //TODO: CBF Magic?
-  //NB: Dumb, proof-of-concept version
-  def parallelize[A](pas: Seq[Pipeline[A]], mapping: Mapping)(implicit executor: ExecutionContext): Pipeline[Future[Seq[A]]] = {
+  //NB: Dumb, proof-of-concept version.  Blocks.
+  def parallelize[A](pas: Seq[Pipeline[A]], mapping: Mapping)(implicit executor: ExecutionContext): Pipeline[Seq[A]] = {
     PipelineStep.literal {
       val futures = pas.map { pipeline =>
         Future(pipeline.runWith(mapping))
       }
       
-      Future.sequence(futures)
+      val futureAs = Future.sequence(futures)
+      
+      //TODO: Allow configurable timeouts
+      Await.result(futureAs, Duration.Inf)
     }
   }
 

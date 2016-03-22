@@ -3,7 +3,10 @@ package loamstream
 import org.scalatest.FunSuite
 import loamstream.config.LoamConfig
 
-
+/**
+ * @author clint
+ * date: Mar 22, 2016
+ */
 final class PipelineTest extends FunSuite {
   test("zip should work") {
     import PipelineStep._
@@ -15,9 +18,8 @@ final class PipelineTest extends FunSuite {
     
     val mapping = Mapping.fromLoamConfig(LoamConfig.Empty)
     
-    val (a, b) = zipped.runWith(mapping)
+    val tuple = zipped.runWith(mapping)
     
-    assert(a == 42)
-    assert(b == 1)
+    assert(tuple === (42, 1))
   }
 }
