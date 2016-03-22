@@ -26,7 +26,7 @@ With those two things, we can
 2. Execute that graph/description as many times as we want, with as many different runtime configurations as we want, at any time after the graph is built.
 
 ### Details
-The core of my idea is to make a more succinct internal API for buildingabstract pipelines using for-comprehensions.  For example, in [SampleIdExtractionPipelineTest](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/test/scala/loamstream/SampleIdExtractionPipelineTest.scala) the main event is:
+The core of my idea is to make a more succinct internal API for building abstract pipelines using for-comprehensions.  For example, in [SampleIdExtractionPipelineTest](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/test/scala/loamstream/SampleIdExtractionPipelineTest.scala) the main event is:
 
 ```scala
 val pipeline: Pipeline[Pile.Set[String]] = for {
@@ -46,9 +46,9 @@ The above pipeline is made of two steps:
 
 the methods `locate()` and `getSamplesFromFile()` are defined in [PipelineStep](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/PipelineStep.scala).
 
-The PipelineStep companion object contains two sets of things: methods that produce Pipelines from various inputs (take a Path, return a Pipeline that produces a set of sample IDs, etc.) and case classes representing the actual steps in a pipeline.
+The `PipelineStep` companion object contains two sets of things: methods that produce `Pipelines` from various inputs (take a `Path`, return a `Pipeline` that produces a set of sample IDs, etc.) and case classes representing the actual steps in a pipeline.
 
-The Cats library provides some magic to turn a PipelineOp[A] instance into something that can be mapped and flatMapped - that is, [something we can use in a for-comprehension](http://docs.scala-lang.org/tutorials/FAQ/yield.html).
+The Cats library provides some magic to turn a PipelineStep[A] instance into something that can be mapped and flatMapped - that is, [something we can use in a for-comprehension](http://docs.scala-lang.org/tutorials/FAQ/yield.html).
 
 A longer Pipeline that uses dummy external commands to simulate the pipeline I set up in Docker images for Intel is here: [ExternalCommandPipelineTest](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/test/scala/loamstream/ExternalCommandPipelineTest.scala) and contains the following pipeline definition:
 
@@ -62,7 +62,7 @@ val pipeline: Pipeline[Path] = for {
 } yield analysisResult.path
 ```
 
-Note that the for-comprehensions don't actually *run* anything; they just build up a sequence of steps.  To run an abstract pipeline, you need a way to map those steps to concrete, possibly side-effecting actions, a [Mapping](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/Mapping.scala):
+Note that the for-comprehensions don't actually *run* anything; they just build up a sequence of steps.  To run an abstract pipeline, you need a way to map those steps to concrete, possibly side-effecting actions, a [Mapping](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/Mapping.scala).
 
 The gist is that a mapping is a function that takes a `PipelineStep[A]` and returns an `A`, however that should happen: resolving a path name, running an external command, etc.
 
@@ -75,11 +75,9 @@ val analysisResult = pipeline.runWith(Mapping.fromLoamConfig(config))
 in [ExternalCommandPipelineTest](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/test/scala/loamstream/ExternalCommandPipelineTest.scala).
 
 ### Cons
-This approach is geared toward sequential computations.  It's possible to have steps run in parallel (see `parallelize` in [loamstream/Pipeline.scala](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/Pipeline.scala)), but that's something that needs to be added on.
-
-The API provided by Cats is geared toward walking a graph of pipeline steps, not examining the graph in total.  This could make some optimizations harder, if that was something we ever wanted to do.
-
-The code looks nice (if I may say so), but the underlying ideas in Cats are advanced and hyper-abstract.  This could pose a problem if we needed to dig into that code in the future.  On the other hand, an analogy with other frameworks is possible: for example, if I want to respond to HTTP requests in a Java program, I can extend the HttpServlet class and implement some methods.  That the environment in which my class will run - a complex, multi-threaded app server that handles all corner cases of a decades-old protocol - is complex is largely of no consequence because I don't need to care about the implementation of the containing app server.
+* This approach is geared toward sequential computations.  It's possible to have steps run in parallel (see `parallelize` in [loamstream/Pipeline.scala](https://github.com/ClintAtTheBroad/loamstream-strawman/blob/master/src/main/scala/loamstream/Pipeline.scala)), but that's something that needs to be added on.
+* The API provided by Cats is geared toward walking a graph of pipeline steps, not examining the graph in total.  This could make some optimizations harder, if that was something we ever wanted to do.
+* The code looks nice (if I may say so), but the underlying ideas in Cats are advanced and hyper-abstract.  This could pose a problem if we needed to dig into that code in the future.  On the other hand, an analogy with other frameworks is possible: for example, if I want to respond to HTTP requests in a Java program, I can extend the HttpServlet class and implement some methods.  That the environment in which my class will run - a complex, multi-threaded app server that handles all corner cases of a decades-old protocol - is complex is no problem; don't need to care about the implementation of the containing app server.
 
 ======
 
