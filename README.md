@@ -4,6 +4,7 @@
 * A simplified view of abstract pipelines as a series of steps, lineraized from a DAG of dependencies, while also allowing steps to run in parallel.
 * A (relatively) simple framework for adding new pipeline steps.
 * The ability to compose new pipelines from existing ones by joining them together, linearizing sets of them, and applying other combinators, while preserving maximum type safety.
+
 ======
 ### Disclaimer
 This is very much a strawman prototype - it skips some error handling and
