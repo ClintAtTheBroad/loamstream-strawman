@@ -1,5 +1,4 @@
 # Clint's LoamStream Experiment
-======
 ## An experimental reformulation of Loamstream's core concepts. Provides:
 * An API for constructing abstract pipelines that's compatible with Scala's for-comprehension syntactic sugar.
 * A simplified view of abstract pipelines as a series of steps, lineraized from a DAG of dependencies, while also allowing steps to run in parallel.
